@@ -1,0 +1,106 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TechMart - MySQL & MongoDB Data Practical - Muhammad Hussain</title>
+<style>
+*{box-sizing:border-box} body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:#0f1b2d;color:#eaf0f8}
+header{background:linear-gradient(120deg,#1f3864,#2e75b6);padding:28px 20px;text-align:center}
+header h1{margin:0;font-size:28px} header p{opacity:.9;margin:6px 0 0}
+.wrap{max-width:1050px;margin:auto;padding:20px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin:18px 0}
+.card{background:#182a44;border:1px solid #2e4a73;border-radius:12px;padding:18px;text-align:center}
+.card b{font-size:26px;display:block;color:#7db8f0} .card span{font-size:13px;opacity:.85}
+section{background:#16263e;border:1px solid #2a4468;border-radius:12px;padding:20px;margin:16px 0}
+h2{color:#7db8f0;margin-top:0} table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px;border-bottom:1px solid #2a4468;text-align:left} th{color:#a9c8ec}
+pre{background:#0a1420;border:1px solid #2a4468;border-radius:8px;padding:14px;overflow:auto;font-size:13px;color:#bfe3c0}
+.bar-row{display:grid;grid-template-columns:110px 1fr 90px;gap:10px;align-items:center;margin:7px 0;font-size:14px}
+.bar{background:#0a1420;height:16px;border-radius:8px} .bar div{background:#2e75b6;height:100%;border-radius:8px}
+.tag{display:inline-block;background:#2e75b6;border-radius:20px;padding:3px 12px;font-size:12px;margin:2px}
+.ok{color:#8be08b} .warn{color:#f2c14e} footer{text-align:center;opacity:.7;padding:18px;font-size:13px}
+</style></head><body>
+<header><h1>TechMart Store - Data Entry & Database Practical</h1>
+<p>By Muhammad Hussain &nbsp;|&nbsp; MySQL &nbsp;•&nbsp; MongoDB &nbsp;•&nbsp; Excel &nbsp;•&nbsp; Data Cleaning & Verification</p></header>
+<div class="wrap">
+<div class="cards">
+<div class="card"><b>12</b><span>Customers (cleaned from 15 raw rows)</span></div>
+<div class="card"><b>16</b><span>Total Orders Entered</span></div>
+<div class="card"><b>8</b><span>Products</span></div>
+<div class="card"><b>Rs 195,700</b><span>Total Sales (excl. cancelled)</span></div>
+<div class="card"><b>6</b><span>Data Errors Found & Fixed</span></div>
+</div>
+
+<section><h2>1. The Task</h2>
+<p>I received a raw customer file with errors, cleaned and verified it, entered the clean data into
+<b>MySQL</b> (3 linked tables) and the same data into <b>MongoDB</b> (documents), then produced sales reports from both.</p>
+<span class="tag">Data Entry</span><span class="tag">Data Cleaning</span><span class="tag">Verification</span>
+<span class="tag">MySQL</span><span class="tag">MongoDB</span><span class="tag">Excel</span></section>
+
+<section><h2>2. Data Cleaning - Before → After</h2>
+<table><tr><th>Problem in raw file</th><th>Fix</th></tr>
+<tr><td>Ahmed Khan & Maryam Aslam entered <b>twice</b></td><td class="ok">Duplicates removed (checked by email)</td></tr>
+<tr><td>City in mixed case: <i>lahore / KARACHI</i></td><td class="ok">Standardised - otherwise GROUP BY gives wrong totals</td></tr>
+<tr><td>Phones in 3 different formats</td><td class="ok">Standardised to 03XX-XXXXXXX</td></tr>
+<tr><td>Omar Farooq: <b>email missing</b></td><td class="warn">Flagged "Missing - follow up" - data is never invented</td></tr>
+<tr><td>One row with <b>no name</b></td><td class="ok">Invalid row removed and logged</td></tr></table></section>
+
+<section><h2>3. MySQL - Relational Tables + Reports</h2>
+<p><b>customers</b> (customer_id PK) &nbsp;→&nbsp; <b>orders</b> (customer_id FK, product_id FK) &nbsp;←&nbsp; <b>products</b> (product_id PK)</p>
+<pre>SELECT c.city, COUNT(o.order_id) AS orders, SUM(o.quantity * p.price) AS sales
+FROM orders o
+JOIN customers c ON o.customer_id = c.customer_id
+JOIN products  p ON o.product_id  = p.product_id
+WHERE o.status &lt;&gt; 'Cancelled'
+GROUP BY c.city ORDER BY sales DESC;</pre>
+<h3>Sales by City (result of the query above)</h3>
+<div class="bar-row"><span>Lahore</span><div class="bar"><div style="width:100%"></div></div><b>59,800</b></div><div class="bar-row"><span>Peshawar</span><div class="bar"><div style="width:70%"></div></div><b>42,000</b></div><div class="bar-row"><span>Faisalabad</span><div class="bar"><div style="width:45%"></div></div><b>27,500</b></div><div class="bar-row"><span>Islamabad</span><div class="bar"><div style="width:41%"></div></div><b>24,900</b></div><div class="bar-row"><span>Karachi</span><div class="bar"><div style="width:36%"></div></div><b>22,000</b></div><div class="bar-row"><span>Multan</span><div class="bar"><div style="width:32%"></div></div><b>19,500</b></div>
+<h3>All Orders Report (JOIN of 3 tables)</h3>
+<table><tr><th>#</th><th>Customer</th><th>City</th><th>Product</th><th>Qty</th><th>Amount (Rs)</th><th>Status</th></tr>
+<tr><td>1</td><td>Ahmed Khan</td><td>Lahore</td><td>Wireless Mouse</td><td>2</td><td>3,600</td><td>Delivered</td></tr>
+<tr><td>2</td><td>Ahmed Khan</td><td>Lahore</td><td>Laptop Stand</td><td>1</td><td>2,500</td><td>Delivered</td></tr>
+<tr><td>3</td><td>Fatima Noor</td><td>Karachi</td><td>Mechanical Keyboard</td><td>1</td><td>7,500</td><td>Delivered</td></tr>
+<tr><td>4</td><td>Bilal Ahmed</td><td>Lahore</td><td>Monitor 24 inch</td><td>1</td><td>42,000</td><td>Delivered</td></tr>
+<tr><td>5</td><td>Ayesha Siddiqui</td><td>Islamabad</td><td>Office Chair</td><td>1</td><td>18,500</td><td>Delivered</td></tr>
+<tr><td>6</td><td>Usman Tariq</td><td>Faisalabad</td><td>USB-C Hub</td><td>2</td><td>9,000</td><td>Delivered</td></tr>
+<tr><td>7</td><td>Maryam Aslam</td><td>Karachi</td><td>External Hard Drive 1TB</td><td>1</td><td>14,500</td><td>Pending</td></tr>
+<tr><td>8</td><td>Hassan Raza</td><td>Lahore</td><td>Wireless Mouse</td><td>3</td><td>5,400</td><td>Delivered</td></tr>
+<tr><td>9</td><td>Zara Iqbal</td><td>Islamabad</td><td>Desk Lamp</td><td>2</td><td>6,400</td><td>Delivered</td></tr>
+<tr><td>10</td><td>Ali Hamza</td><td>Multan</td><td>Laptop Stand</td><td>2</td><td>5,000</td><td>Delivered</td></tr>
+<tr><td>11</td><td>Sana Tariq</td><td>Karachi</td><td>Mechanical Keyboard</td><td>1</td><td>7,500</td><td>Cancelled</td></tr>
+<tr><td>12</td><td>Omar Farooq</td><td>Peshawar</td><td>Monitor 24 inch</td><td>1</td><td>42,000</td><td>Delivered</td></tr>
+<tr><td>13</td><td>Hira Shah</td><td>Lahore</td><td>USB-C Hub</td><td>1</td><td>4,500</td><td>Delivered</td></tr>
+<tr><td>14</td><td>Bilal Ahmed</td><td>Lahore</td><td>Wireless Mouse</td><td>1</td><td>1,800</td><td>Delivered</td></tr>
+<tr><td>15</td><td>Usman Tariq</td><td>Faisalabad</td><td>Office Chair</td><td>1</td><td>18,500</td><td>Pending</td></tr>
+<tr><td>16</td><td>Ali Hamza</td><td>Multan</td><td>External Hard Drive 1TB</td><td>1</td><td>14,500</td><td>Delivered</td></tr></table></section>
+
+<section><h2>4. MongoDB - Same Data as Documents</h2>
+<p>No tables and no JOIN - each customer is one document and his orders sit inside it as an array:</p>
+<pre>{
+  "_id": 1,
+  "full_name": "Ahmed Khan",
+  "city": "Lahore",
+  "email": "ahmed.khan@gmail.com",
+  "phone": "0301-2345671",
+  "orders": [
+    { "product": "Wireless Mouse", "price": 1800, "quantity": 2,
+      "amount": 3600, "status": "Delivered" },
+    { "product": "Laptop Stand", "price": 2500, "quantity": 1,
+      "amount": 2500, "status": "Delivered" }
+  ]
+}</pre>
+<pre>// Sales by city - aggregation pipeline (MongoDB's GROUP BY)
+db.customers.aggregate([
+  { $unwind: "$orders" },
+  { $match: { "orders.status": { $ne: "Cancelled" } } },
+  { $group: { _id: "$city", sales: { $sum: "$orders.amount" } } },
+  { $sort: { sales: -1 } }
+])</pre>
+<p class="ok">Result is identical to MySQL: Total Sales = Rs 195,700</p></section>
+
+<section><h2>5. MySQL vs MongoDB - When I Use Each</h2>
+<table><tr><th></th><th>MySQL</th><th>MongoDB</th></tr>
+<tr><td>Data stored as</td><td>Tables with rows & columns</td><td>JSON-like documents</td></tr>
+<tr><td>Schema</td><td>Fixed - defined first</td><td>Flexible - can vary per document</td></tr>
+<tr><td>Linking data</td><td>JOIN + Foreign Keys</td><td>Embedded arrays / references</td></tr>
+<tr><td>Best for</td><td>Orders, payments, structured records</td><td>Catalogues, flexible / fast-changing data</td></tr></table></section>
+</div><footer>Muhammad Hussain - muhammadhussain199551@gmail.com - Full files: 01_mysql_practical.sql • 02_mongodb_practical.js • TechMart_Data_Practical.xlsx</footer>
+</body></html>
